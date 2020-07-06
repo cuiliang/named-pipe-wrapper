@@ -112,6 +112,15 @@ namespace NamedPipeWrapper
                 _connection.Close();
         }
 
+        /// <summary>
+        /// 是否连接
+        /// </summary>
+        /// <returns></returns>
+        public bool IsConnected()
+        {
+            return _connection?.IsConnected == true;
+        }
+
         #region Wait for connection/disconnection
 
         public void WaitForConnection()
