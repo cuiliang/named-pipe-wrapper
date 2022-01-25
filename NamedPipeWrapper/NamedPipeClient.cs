@@ -51,6 +51,12 @@ namespace NamedPipeWrapper
         /// </summary>
         public event ConnectionEventHandler<TRead, TWrite> Disconnected;
 
+
+        /// <summary>
+        /// Invoked when the client connected to the server
+        /// </summary>
+        public event ConnectionEventHandler<TRead, TWrite> Connected;
+
         /// <summary>
         /// Invoked whenever an exception is thrown during a read or write operation on the named pipe.
         /// </summary>
@@ -175,6 +181,8 @@ namespace NamedPipeWrapper
             _connection.Open();
 
             _connected.Set();
+
+            Connected?.Invoke(_connection);
         }
 
         private void OnDisconnected(NamedPipeConnection<TRead, TWrite> connection)
