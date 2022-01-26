@@ -30,6 +30,13 @@ namespace NamedPipeWrapper
         /// </summary>
         public string Name { get; }
 
+
+        /// <summary>
+        /// Store custom data with connection
+        /// </summary>
+        public object Tag { get; set; }
+
+
         /// <summary>
         /// Gets a value indicating whether the pipe is connected or not.
         /// </summary>
