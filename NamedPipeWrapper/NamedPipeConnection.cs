@@ -8,6 +8,7 @@ using System.Threading;
 using NamedPipeWrapper.IO;
 using NamedPipeWrapper.Threading;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace NamedPipeWrapper
 {
@@ -43,6 +44,11 @@ namespace NamedPipeWrapper
         public bool IsConnected { get { return _streamWrapper.IsConnected; } }
 
         /// <summary>
+        /// 是否关闭连接。解决资源不释放的问题。
+        /// </summary>
+        public bool ShutDown { get; private set; }
+
+        /// <summary>
         /// Invoked when the named pipe connection terminates.
         /// </summary>
         public event ConnectionEventHandler<TRead, TWrite> Disconnected;
@@ -67,12 +73,16 @@ namespace NamedPipeWrapper
 
         private bool _notifiedSucceeded;
 
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+
         internal NamedPipeConnection(int id, string name, PipeStream serverStream)
         {
             Id = id;
             Name = name;
             _streamWrapper = new PipeStreamWrapper<TRead, TWrite>(serverStream);
         }
+
+
 
         /// <summary>
         /// Begins reading from and writing to the named pipe on a background thread.
@@ -116,6 +126,8 @@ namespace NamedPipeWrapper
         /// </summary>
         private void CloseImpl()
         {
+            ShutDown = true;
+            _cts.Cancel(true);
             _streamWrapper.Close();
             _writeSignal.Set();
         }
@@ -145,31 +157,46 @@ namespace NamedPipeWrapper
                 Error(this, exception);
         }
 
+
+
         /// <summary>
         ///     Invoked on the background thread.
         /// </summary>
         /// <exception cref="SerializationException">An object in the graph of type parameter <typeparamref name="TRead"/> is not marked as serializable.</exception>
         private void ReadPipe()
         {
-
-            while (IsConnected && _streamWrapper.CanRead)
+            try
             {
-                try
+                Debug.WriteLine($"BEGIN Read Pipie:{Id}");
+
+
+                while (ShutDown == false && IsConnected && _streamWrapper.CanRead)
                 {
-                    var obj = _streamWrapper.ReadObject();
-                    if (obj == null)
+                    try
                     {
-                        CloseImpl();
-                        return;
+                        var obj = _streamWrapper.ReadObject();
+                        if (obj == null)
+                        {
+                            CloseImpl();
+                            return;
+                        }
+
+                        if (ReceiveMessage != null)
+                            ReceiveMessage(this, obj);
                     }
-                    if (ReceiveMessage != null)
-                        ReceiveMessage(this, obj);
-                }
-                catch
-                {
-                    //we must igonre exception, otherwise, the namepipe wrapper will stop work.
+                    catch
+                    {
+                        //we must igonre exception, otherwise, the namepipe wrapper will stop work.
+                    }
                 }
             }
+            finally
+            {
+                Debug.WriteLine($"END Read Pipie:{Id}");
+            }
+            
+           
+
             
         }
 
@@ -179,8 +206,11 @@ namespace NamedPipeWrapper
         /// <exception cref="SerializationException">An object in the graph of type parameter <typeparamref name="TWrite"/> is not marked as serializable.</exception>
         private void WritePipe()
         {
-            
-                while (IsConnected && _streamWrapper.CanWrite)
+            try
+            {
+                Debug.WriteLine($"BEGIN Write Pipie:{Id}");
+
+                while (ShutDown == false && IsConnected && _streamWrapper.CanWrite)
                 {
                     try
                     {
@@ -188,16 +218,29 @@ namespace NamedPipeWrapper
                         //_writeSignal.WaitOne();
                         //while (_writeQueue.Count > 0)
                         {
-                            _streamWrapper.WriteObject(_writeQueue.Take());
+                            var obj = _writeQueue.Take(_cts.Token);
+                            if (obj == null)
+                            {
+                                // 取消了，直接退出
+                                return;
+                            }
+
+                            _streamWrapper.WriteObject(obj);
                             _streamWrapper.WaitForPipeDrain();
                         }
                     }
                     catch
                     {
-                    //we must igonre exception, otherwise, the namepipe wrapper will stop work.
+                        //we must igonre exception, otherwise, the namepipe wrapper will stop work.
+                    }
                 }
             }
-          
+            finally
+            {
+                Debug.WriteLine($"END Write Pipie:{Id}");
+            }
+            
+
         }
     }
 

@@ -2,6 +2,7 @@
 using NamedPipeWrapper.Threading;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Pipes;
 
 namespace NamedPipeWrapper
@@ -156,7 +157,15 @@ namespace NamedPipeWrapper
             _isRunning = true;
             while (_shouldKeepRunning)
             {
-                WaitForConnection(_pipeName, _pipeSecurity);
+                try
+                {
+                    WaitForConnection(_pipeName, _pipeSecurity);
+                }
+                catch (Exception ex)
+                {
+                    // ignore
+                    Debug.WriteLine("捕获异常：" + ex.Message);
+                }
             }
             _isRunning = false;
         }
@@ -199,6 +208,7 @@ namespace NamedPipeWrapper
             // Catch the IOException that is raised if the pipe is broken or disconnected.
             catch (Exception e)
             {
+                
                 Console.Error.WriteLine("Named pipe is broken or disconnected: {0}", e);
 
                 Cleanup(handshakePipe);
