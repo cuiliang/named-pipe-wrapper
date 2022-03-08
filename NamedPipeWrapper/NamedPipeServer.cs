@@ -198,6 +198,8 @@ namespace NamedPipeWrapper
                 // Wait for the client to connect to the data pipe
                 dataPipe = PipeServerFactory.CreatePipe(connectionPipeName, pipeSecurity);
                 dataPipe.WaitForConnection();
+                //dataPipe.WaitForConnection()
+                
 
                 // Add the client's connection to the list of connections
                 connection = ConnectionFactory.CreateConnection<TRead, TWrite>(dataPipe);
