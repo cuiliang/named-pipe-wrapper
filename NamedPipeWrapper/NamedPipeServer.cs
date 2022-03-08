@@ -154,20 +154,28 @@ namespace NamedPipeWrapper
 
         private void ListenSync()
         {
-            _isRunning = true;
-            while (_shouldKeepRunning)
+            try
             {
-                try
+                _isRunning = true;
+                while (_shouldKeepRunning)
                 {
-                    WaitForConnection(_pipeName, _pipeSecurity);
+                    try
+                    {
+                        WaitForConnection(_pipeName, _pipeSecurity);
+                    }
+                    catch (Exception ex)
+                    {
+                        // ignore
+                        Debug.WriteLine("捕获异常：" + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    // ignore
-                    Debug.WriteLine("捕获异常：" + ex.Message);
-                }
+
+                _isRunning = false;
             }
-            _isRunning = false;
+            finally
+            {
+                Debug.WriteLine("Namedpipe Server 停止了。");
+            }
         }
 
         private void WaitForConnection(string pipeName, PipeSecurity pipeSecurity)
@@ -290,7 +298,11 @@ namespace NamedPipeWrapper
 
         public static NamedPipeServerStream CreatePipe(string pipeName, PipeSecurity pipeSecurity)
         {
-            return new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, pipeSecurity);
+            return new NamedPipeServerStream(pipeName, 
+                PipeDirection.InOut, 
+                3, 
+                PipeTransmissionMode.Byte, 
+                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, pipeSecurity);
         }
     }
 }
