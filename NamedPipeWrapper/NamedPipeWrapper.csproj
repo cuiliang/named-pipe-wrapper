@@ -56,7 +56,6 @@
     <Compile Include="_new\BasicPipe.cs" />
     <Compile Include="_new\ClientPipe.cs" />
     <Compile Include="_new\PipeEventArgs.cs" />
-    <Compile Include="_new\PipeServer.cs" />
     <Compile Include="_new\ServerPipe.cs" />
   </ItemGroup>
   <ItemGroup>

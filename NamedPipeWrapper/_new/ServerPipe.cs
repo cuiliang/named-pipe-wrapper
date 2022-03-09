@@ -25,6 +25,7 @@
 // See Eric Frazer's Q and self answer
 
 using System;
+using System.IO;
 using System.IO.Pipes;
 
 namespace Clifton.Core.Pipes
@@ -48,7 +49,7 @@ namespace Clifton.Core.Pipes
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
                 PipeTransmissionMode.Message,
-                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0,0, security);
+                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0,0, security, HandleInheritability.Inheritable);
 
             pipeStream = serverPipeStream;
             serverPipeStream.BeginWaitForConnection(new AsyncCallback(PipeConnected), null);
