@@ -38,6 +38,8 @@ namespace Clifton.Core.Pipes
         protected NamedPipeServerStream serverPipeStream;
         protected string PipeName { get; set; }
 
+        public bool IsConnected => serverPipeStream?.IsConnected == true;
+
 		public ServerPipe(string pipeName, Action<BasicPipe> asyncReaderStart, PipeSecurity security)
         {
             _security = security;
