@@ -167,9 +167,14 @@ namespace NamedPipeWrapper
 
         private void ListenSync()
         {
+            
+
             // Get the name of the data pipe that should be used from now on by this NamedPipeClient
             var handshake = PipeClientFactory.Connect<string, string>(_pipeName,_serverName);
             var dataPipeName = handshake.ReadObject();
+
+            // dataPipeName 可能为空？
+
             handshake.Close();
 
             // Connect to the actual data pipe
@@ -195,7 +200,8 @@ namespace NamedPipeWrapper
             _disconnected.Set();
 
             // Reconnect
-            if (AutoReconnect && !_closedExplicitly)
+            //if (AutoReconnect && !_closedExplicitly)
+            if (AutoReconnect) // 20220610,其它断开情况也重连
                 Start();
         }
 
@@ -244,6 +250,7 @@ namespace NamedPipeWrapper
 
         private static NamedPipeClientStream CreatePipe(string pipeName,string serverName)
         {
+
             return new NamedPipeClientStream(serverName, pipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
         }
 
