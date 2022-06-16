@@ -188,6 +188,7 @@ namespace NamedPipeWrapper
 
             try
             {
+                /*
                 // Send the client the name of the data pipe to use
                 handshakePipe = PipeServerFactory.CreateAndConnectPipe(pipeName, pipeSecurity);
                 var handshakeWrapper = new PipeStreamWrapper<string, string>(handshakePipe);
@@ -199,7 +200,10 @@ namespace NamedPipeWrapper
                 dataPipe = PipeServerFactory.CreatePipe(connectionPipeName, pipeSecurity);
                 dataPipe.WaitForConnection();
                 //dataPipe.WaitForConnection()
-                
+                */
+
+                dataPipe = PipeServerFactory.CreateAndConnectPipe(pipeName, pipeSecurity);
+
 
                 // Add the client's connection to the list of connections
                 connection = ConnectionFactory.CreateConnection<TRead, TWrite>(dataPipe);
@@ -301,8 +305,8 @@ namespace NamedPipeWrapper
         public static NamedPipeServerStream CreatePipe(string pipeName, PipeSecurity pipeSecurity)
         {
             return new NamedPipeServerStream(pipeName, 
-                PipeDirection.InOut, 
-                3, 
+                PipeDirection.InOut,
+                NamedPipeServerStream.MaxAllowedServerInstances, 
                 PipeTransmissionMode.Byte, 
                 PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, pipeSecurity);
         }

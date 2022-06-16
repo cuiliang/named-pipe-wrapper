@@ -167,8 +167,8 @@ namespace NamedPipeWrapper
 
         private void ListenSync()
         {
-            
 
+            /*
             // Get the name of the data pipe that should be used from now on by this NamedPipeClient
             var handshake = PipeClientFactory.Connect<string, string>(_pipeName,_serverName);
             var dataPipeName = handshake.ReadObject();
@@ -179,6 +179,9 @@ namespace NamedPipeWrapper
 
             // Connect to the actual data pipe
             var dataPipe = PipeClientFactory.CreateAndConnectPipe(dataPipeName,_serverName);
+            */
+
+            var dataPipe = PipeClientFactory.CreateAndConnectPipe(_pipeName, _serverName);
 
             // Create a Connection object for the data pipe
             _connection = ConnectionFactory.CreateConnection<TRead, TWrite>(dataPipe);
