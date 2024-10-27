@@ -26,7 +26,9 @@ namespace NamedPipeWrapper.IO
         /// </summary>
         public bool IsConnected { get; private set; }
 
+#pragma warning disable SYSLIB0011
         private readonly BinaryFormatter _binaryFormatter = new BinaryFormatter();
+#pragma warning restore SYSLIB0011
 
         /// <summary>
         /// Constructs a new <c>PipeStreamReader</c> object that reads data from the given <paramref name="stream"/>.

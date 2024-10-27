@@ -21,7 +21,9 @@ namespace NamedPipeWrapper.IO
         /// </summary>
         public PipeStream BaseStream { get; private set; }
 
+#pragma warning disable SYSLIB0011
         private readonly BinaryFormatter _binaryFormatter = new BinaryFormatter();
+#pragma warning restore SYSLIB0011
 
         /// <summary>
         /// Constructs a new <c>PipeStreamWriter</c> object that writes to given <paramref name="stream"/>.

@@ -51,7 +51,7 @@ namespace Clifton.Core.Pipes
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
                 PipeTransmissionMode.Message,
-                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0,0, security, HandleInheritability.Inheritable);
+                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0,0/*, security, HandleInheritability.Inheritable*/);
 
             pipeStream = serverPipeStream;
             serverPipeStream.BeginWaitForConnection(new AsyncCallback(PipeConnected), null);

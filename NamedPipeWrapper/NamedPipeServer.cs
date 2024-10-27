@@ -308,7 +308,7 @@ namespace NamedPipeWrapper
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances, 
                 PipeTransmissionMode.Byte, 
-                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, pipeSecurity);
+                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0/*, pipeSecurity*/);
         }
     }
 }
