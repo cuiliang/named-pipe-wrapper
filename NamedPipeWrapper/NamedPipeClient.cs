@@ -262,9 +262,13 @@ namespace NamedPipeWrapper
             var connected = false;
             var resetEvent = new ManualResetEvent(false);
 
-            while (!connected)
+            var retryCount = 0; // 增加重试计数
+			const int maxRetries = 2; // 最大重试次数
+
+			while (!connected
+					&& retryCount < maxRetries)
             {
-                if (!Kernel32.WaitNamedPipe(fullPath, 0xffffffff))
+                if (!Kernel32.WaitNamedPipe(fullPath, 1000))
                 {
                     resetEvent.WaitOne(100); // prevent cpu spin
                 }
@@ -273,7 +277,7 @@ namespace NamedPipeWrapper
                     try
                     {
                         // NamedPipeClientStream.Connect() defaults to a timeout value of -1, which blocks and spins the CPU, provide a sensible timeout value for Connect().
-                        pipe.Connect(15000);
+                        pipe.Connect(1000);
                         connected = true;
                     }
                     catch (TimeoutException)
@@ -281,7 +285,9 @@ namespace NamedPipeWrapper
                         connected = false;
                     }
                 }
-            }
+
+                retryCount++;
+			}
         }
     }
 }
