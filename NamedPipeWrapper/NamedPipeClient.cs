@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -43,10 +44,22 @@ namespace NamedPipeWrapper
         /// </summary>
         public bool AutoReconnect { get; set; }
 
+		/// <summary>
+		/// 连接时的最大重试次数。
+		/// -1 表示持续重试，适合持续性连接。
+		/// 其它表示临时性连接。
+		/// </summary>
+		public int MaxConnectRetryCount { get; set; } = -1;
+
         /// <summary>
-        /// Invoked whenever a message is received from the server.
+        /// 取消连接
         /// </summary>
-        public event ConnectionMessageEventHandler<TRead, TWrite> ServerMessage;
+        public CancellationTokenSource ConnectionCancellationTokenSource { get; set; }
+
+		/// <summary>
+		/// Invoked whenever a message is received from the server.
+		/// </summary>
+		public event ConnectionMessageEventHandler<TRead, TWrite> ServerMessage;
 
         /// <summary>
         /// Invoked when the client disconnects from the server (e.g., the pipe is closed or broken).
@@ -94,7 +107,13 @@ namespace NamedPipeWrapper
         /// </summary>
         public void Start()
         {
-            _closedExplicitly = false;
+	        if (ConnectionCancellationTokenSource != null)
+	        {
+                ConnectionCancellationTokenSource.Cancel();
+			}
+            ConnectionCancellationTokenSource = new CancellationTokenSource();
+
+			_closedExplicitly = false;
             var worker = new Worker();
             worker.Error += OnError;
             worker.DoWork(ListenSync);
@@ -118,7 +137,12 @@ namespace NamedPipeWrapper
             _closedExplicitly = true;
             if (_connection != null)
                 _connection.Close();
-        }
+
+            if (ConnectionCancellationTokenSource != null)
+			{
+				ConnectionCancellationTokenSource.Cancel();
+			}
+		}
 
         /// <summary>
         /// 是否连接
@@ -181,7 +205,7 @@ namespace NamedPipeWrapper
             var dataPipe = PipeClientFactory.CreateAndConnectPipe(dataPipeName,_serverName);
             */
 
-            var dataPipe = PipeClientFactory.CreateAndConnectPipe(_pipeName, _serverName);
+            var dataPipe = PipeClientFactory.CreateAndConnectPipe(_pipeName, _serverName, MaxConnectRetryCount, ConnectionCancellationTokenSource);
 
             // Create a Connection object for the data pipe
             _connection = ConnectionFactory.CreateConnection<TRead, TWrite>(dataPipe);
@@ -193,6 +217,9 @@ namespace NamedPipeWrapper
             _connected.Set();
 
             Connected?.Invoke(_connection);
+
+
+            Debug.WriteLine($"ListenSync结束了。");
         }
 
         private void OnDisconnected(NamedPipeConnection<TRead, TWrite> connection)
@@ -237,17 +264,17 @@ namespace NamedPipeWrapper
 
     static class PipeClientFactory
     {
-        public static PipeStreamWrapper<TRead, TWrite> Connect<TRead, TWrite>(string pipeName,string serverName)
-            where TRead : class
-            where TWrite : class
-        {
-            return new PipeStreamWrapper<TRead, TWrite>(CreateAndConnectPipe(pipeName,serverName));
-        }
+        //public static PipeStreamWrapper<TRead, TWrite> Connect<TRead, TWrite>(string pipeName,string serverName)
+        //    where TRead : class
+        //    where TWrite : class
+        //{
+        //    return new PipeStreamWrapper<TRead, TWrite>(CreateAndConnectPipe(pipeName,serverName));
+        //}
 
-        public static NamedPipeClientStream CreateAndConnectPipe(string pipeName, string serverName)
+        public static NamedPipeClientStream CreateAndConnectPipe(string pipeName, string serverName, int maxRetry, CancellationTokenSource cts)
         {
             var pipe = CreatePipe(pipeName, serverName);
-            ConnectWithRetry(pipe, Path.GetFullPath($@"\\{serverName}\pipe\{pipeName}"));
+            ConnectWithRetry(pipe, Path.GetFullPath($@"\\{serverName}\pipe\{pipeName}"), maxRetry, cts);
             return pipe;
         }
 
@@ -257,18 +284,23 @@ namespace NamedPipeWrapper
             return new NamedPipeClientStream(serverName, pipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
         }
 
-        private static void ConnectWithRetry(NamedPipeClientStream pipe, string fullPath)
+        private static void ConnectWithRetry(NamedPipeClientStream pipe, string fullPath,  int maxRetry, CancellationTokenSource cts)
         {
             var connected = false;
             var resetEvent = new ManualResetEvent(false);
 
             var retryCount = 0; // 增加重试计数
-			const int maxRetries = 2; // 最大重试次数
+			
 
 			while (!connected
-					&& retryCount < maxRetries)
+					&& (maxRetry < 0 || retryCount < maxRetry))
             {
-                if (!Kernel32.WaitNamedPipe(fullPath, 1000))
+				if (cts != null && cts.IsCancellationRequested)
+				{
+					return;
+				}
+
+				if (!Kernel32.WaitNamedPipe(fullPath, 1000))
                 {
                     resetEvent.WaitOne(100); // prevent cpu spin
                 }

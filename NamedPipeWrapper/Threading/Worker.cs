@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -50,6 +51,8 @@ namespace NamedPipeWrapper.Threading
             {
                 Callback(() => Fail(e));
             }
+
+            Debug.WriteLine($"Worker:结束了");
         }
 
         private void Succeed()
