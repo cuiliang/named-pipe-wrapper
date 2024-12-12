@@ -300,23 +300,33 @@ namespace NamedPipeWrapper
 					return;
 				}
 
-				if (!Kernel32.WaitNamedPipe(fullPath, 1000))
-                {
-                    resetEvent.WaitOne(100); // prevent cpu spin
-                }
-                else
+				var watch = Stopwatch.StartNew();
+
+				//if (!Kernel32.WaitNamedPipe(fullPath, 1000))
+    //            {
+    //                Debug.WriteLine($"等待命名管道："+watch.ElapsedMilliseconds);
+
+    //                resetEvent.WaitOne(100); // prevent cpu spin
+
+    //                Debug.WriteLine($"等待命名管道：" + watch.ElapsedMilliseconds);
+
+				//}
+				//else
                 {
                     try
                     {
                         // NamedPipeClientStream.Connect() defaults to a timeout value of -1, which blocks and spins the CPU, provide a sensible timeout value for Connect().
                         pipe.Connect(1000);
                         connected = true;
-                    }
+
+                        
+					}
                     catch (TimeoutException)
                     {
                         connected = false;
                     }
-                }
+                    Debug.WriteLine($"等待命名管道：" + watch.ElapsedMilliseconds);
+				}
 
                 retryCount++;
 			}
