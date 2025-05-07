@@ -46,14 +46,29 @@ namespace Clifton.Core.Pipes
             this.asyncReaderStart = asyncReaderStart;
             PipeName = pipeName;
 
-            serverPipeStream = new NamedPipeServerStream(
-                pipeName,
-                PipeDirection.InOut,
-                NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Message,
-                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0,0/*, security, HandleInheritability.Inheritable*/);
+            //serverPipeStream = new NamedPipeServerStream(
+            //    pipeName,
+            //    PipeDirection.InOut,
+            //    NamedPipeServerStream.MaxAllowedServerInstances,
+            //    PipeTransmissionMode.Message,
+            //    PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0,0, security /*,HandleInheritability.Inheritable*/);
+#if NETFRAMEWORK
+            serverPipeStream = new NamedPipeServerStream(pipeName,
+	            PipeDirection.InOut,
+	            NamedPipeServerStream.MaxAllowedServerInstances,
+	            PipeTransmissionMode.Byte,
+	            PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, security);
+#else
+			serverPipeStream = new NamedPipeServerStream(pipeName,
+			            PipeDirection.InOut,
+			            NamedPipeServerStream.MaxAllowedServerInstances,
+			            PipeTransmissionMode.Byte,
+			            PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0);
+            serverPipeStream.SetAccessControl(security);
+#endif
 
-            pipeStream = serverPipeStream;
+
+			pipeStream = serverPipeStream;
             serverPipeStream.BeginWaitForConnection(new AsyncCallback(PipeConnected), null);
         }
 
