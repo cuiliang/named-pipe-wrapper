@@ -304,11 +304,21 @@ namespace NamedPipeWrapper
 
         public static NamedPipeServerStream CreatePipe(string pipeName, PipeSecurity pipeSecurity)
         {
+#if NETFRAMEWORK
             return new NamedPipeServerStream(pipeName, 
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances, 
                 PipeTransmissionMode.Byte, 
-                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0/*, pipeSecurity*/);
-        }
-    }
+                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0, pipeSecurity);
+#else
+           var server = new NamedPipeServerStream(pipeName, 
+                PipeDirection.InOut,
+                NamedPipeServerStream.MaxAllowedServerInstances, 
+                PipeTransmissionMode.Byte, 
+                PipeOptions.Asynchronous | PipeOptions.WriteThrough, 0, 0);
+            server.SetAccessControl(pipeSecurity);
+            return server;
+#endif
+		}
+	}
 }

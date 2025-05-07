@@ -85,6 +85,7 @@ namespace NamedPipeWrapper
 
 
         /// <summary>
+        /// 
         /// Begins reading from and writing to the named pipe on a background thread.
         /// This method returns immediately.
         /// </summary>
